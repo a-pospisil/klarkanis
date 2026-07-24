@@ -375,6 +375,9 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
     <div class="sechead rv"><span class="num">04 — Kontakt</span><h2>Máte proces, který drhne?</h2></div>
     <div class="contact-grid rv">
       <form id="kform" novalidate>
+        <input type="hidden" name="access_key" value="be3bcf2b-eec9-4c09-9e3e-22ab21f12473">
+        <input type="hidden" name="subject" value="Nová poptávka z webu klarkanis.cz">
+        <input type="hidden" name="from_name" value="Web klarkanis.cz">
         <div class="frow">
           <div class="field">
             <label for="f-name">Jméno<em>*</em></label>
@@ -425,13 +428,13 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
 
 <script>
 /* ============================================================
-   KONTAKTNÍ FORMULÁŘ
-   Doplň sem endpoint z Formspree (https://formspree.io) nebo
-   Web3Forms. Dokud je prázdný, formulář jen upozorní, že není
-   napojený, a nic neodešle.
-   Příklad: const FORM_ENDPOINT = 'https://formspree.io/f/abcdwxyz';
+   KONTAKTNÍ FORMULÁŘ — Web3Forms
+   Poptávky chodí na e-mail navázaný na přístupový klíč (access_key).
+   Klíč získáš zdarma na https://web3forms.com — zadáš info@egfin.cz,
+   přijde ti klíč, který vložíš výše v <input name="access_key">
+   místo textu WEB3FORMS_ACCESS_KEY. Endpoint níže neměň.
    ============================================================ */
-const FORM_ENDPOINT = '';
+const FORM_ENDPOINT = 'https://api.web3forms.com/submit';
 
 const form = document.getElementById('kform');
 const fmsg = document.getElementById('fmsg');
