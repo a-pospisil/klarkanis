@@ -87,10 +87,11 @@ header .wrap{position:relative;z-index:1}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--flame);flex-shrink:0}
 
 h1{
+  position:relative;
   font-size:clamp(2.9rem,10vw,8.4rem);
   line-height:1.05;text-transform:uppercase;
 }
-h1 span{display:block}
+h1 span{display:block;transition:opacity .3s ease}
 h1 .cm{font-family:'Manrope',sans-serif;font-style:normal;font-weight:800}
 h1 .out{
   color:transparent;
@@ -98,6 +99,16 @@ h1 .out{
   margin-left:1px;
 }
 @media(max-width:640px){h1 .out{-webkit-text-stroke-width:1.4px}}
+.hero-mesh-canvas{
+  position:absolute;inset:0;width:100%;height:100%;display:block;
+  opacity:0;pointer-events:none;transition:opacity .5s ease;
+}
+h1.mesh-ready .hero-mesh-canvas{opacity:1;pointer-events:auto}
+h1.mesh-ready>span{opacity:0}
+@media(prefers-reduced-motion:reduce){
+  .hero-mesh-canvas{display:none!important}
+  h1.mesh-ready>span{opacity:1!important}
+}
 .hero-tag{
   display:flex;flex-wrap:wrap;gap:28px 48px;align-items:flex-end;justify-content:space-between;
   margin-top:44px;padding-bottom:66px;
@@ -315,10 +326,11 @@ footer .wrap{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap}
   </svg>
   <div class="wrap">
     <div class="eyebrow mono"><span class="dot"></span> Business analytička &amp; interní informační systémy</div>
-    <h1>
+    <h1 id="heroH1">
       <span>Procesy<i class="cm">,</i></span>
       <span class="out">které</span>
       <span>dávají smysl</span>
+      <canvas id="heroMeshCanvas" class="hero-mesh-canvas" aria-hidden="true"></canvas>
     </h1>
     <div class="hero-tag">
       <p>Přeložím provoz firmy do funkčního systému — a pak ho postavím, nasadím a starám se o něj.<br>Bez analýz, které skončí v šuplíku.</p>
@@ -555,6 +567,277 @@ const io = new IntersectionObserver((es) => {
   es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } });
 }, {threshold:.1, rootMargin:'0px 0px -40px 0px'});
 document.querySelectorAll('.rv').forEach(el => io.observe(el));
+
+/* ============================================================
+   HERO MESH HOVER — WebGL2 text-warp na hlavním nadpisu.
+   Text zůstává v DOM (SEO/přístupnost), canvas ho jen vizuálně
+   překryje po načtení fontu a WebGL2 kontextu; bez podpory
+   nebo s prefers-reduced-motion zůstává statický text.
+   ============================================================ */
+(function heroMesh() {
+  const h1 = document.getElementById('heroH1');
+  const canvas = document.getElementById('heroMeshCanvas');
+  if (!h1 || !canvas) return;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const gl = canvas.getContext('webgl2', { alpha: true, premultipliedAlpha: true, antialias: true });
+  if (!gl) return;
+
+  const GRID_W = 96, GRID_H = 40;
+  const DRAG = 1.8, SPRING_K = 0.08, DAMPING = 0.9, DT = 0.1, CHROMA = 0.005;
+  const INK = '#141310';
+  const COLOR_A = [0.847, 0.255, 0.059]; // flame
+  const COLOR_B = [0.910, 1.0, 0.322];   // acid
+
+  const VERT_SRC = `#version 300 es
+  in vec2 aPos;
+  in vec2 aUv;
+  in vec2 aDisp;
+  out vec2 vUv;
+  out float vMag;
+  void main() {
+    gl_Position = vec4(aPos + aDisp, 0.0, 1.0);
+    vUv = aUv;
+    vMag = length(aDisp);
+  }`;
+
+  const FRAG_SRC = `#version 300 es
+  precision highp float;
+  in vec2 vUv;
+  in float vMag;
+  out vec4 outColor;
+  uniform sampler2D uTex;
+  uniform float uChroma;
+  uniform vec3 uColorA;
+  uniform vec3 uColorB;
+  void main() {
+    vec4 base = texture(uTex, vUv);
+    float o = uChroma * ${CHROMA.toFixed(5)} * clamp(vMag * 8.0, 0.0, 1.0);
+    float aOff = texture(uTex, vUv + vec2(o, 0.0)).a;
+    float bOff = texture(uTex, vUv - vec2(o, 0.0)).a;
+    vec3 col = base.rgb * base.a;
+    col += uColorA * max(0.0, aOff - base.a);
+    col += uColorB * max(0.0, bOff - base.a);
+    float aMax = max(base.a, max(aOff, bOff));
+    outColor = vec4(col, aMax);
+  }`;
+
+  function compile(type, src) {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
+      console.error('heroMesh shader error:', gl.getShaderInfoLog(sh));
+      gl.deleteShader(sh);
+      return null;
+    }
+    return sh;
+  }
+
+  const vs = compile(gl.VERTEX_SHADER, VERT_SRC);
+  const fs = compile(gl.FRAGMENT_SHADER, FRAG_SRC);
+  if (!vs || !fs) return;
+  const program = gl.createProgram();
+  gl.attachShader(program, vs);
+  gl.attachShader(program, fs);
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+    console.error('heroMesh link error:', gl.getProgramInfoLog(program));
+    return;
+  }
+
+  const aPos = gl.getAttribLocation(program, 'aPos');
+  const aUv = gl.getAttribLocation(program, 'aUv');
+  const aDisp = gl.getAttribLocation(program, 'aDisp');
+  const uTex = gl.getUniformLocation(program, 'uTex');
+  const uChroma = gl.getUniformLocation(program, 'uChroma');
+  const uColorA = gl.getUniformLocation(program, 'uColorA');
+  const uColorB = gl.getUniformLocation(program, 'uColorB');
+
+  const vertCount = (GRID_W + 1) * (GRID_H + 1);
+  const positions = new Float32Array(vertCount * 2);
+  const uvs = new Float32Array(vertCount * 2);
+  for (let y = 0; y <= GRID_H; y++) {
+    for (let x = 0; x <= GRID_W; x++) {
+      const i = y * (GRID_W + 1) + x;
+      const u = x / GRID_W, v = y / GRID_H;
+      positions[i * 2] = u * 2 - 1;
+      positions[i * 2 + 1] = 1 - v * 2;
+      uvs[i * 2] = u;
+      uvs[i * 2 + 1] = v;
+    }
+  }
+  const indexCount = GRID_W * GRID_H * 6;
+  const indices = new Uint32Array(indexCount);
+  let ii = 0;
+  for (let y = 0; y < GRID_H; y++) {
+    for (let x = 0; x < GRID_W; x++) {
+      const a = y * (GRID_W + 1) + x, b = a + 1, c = a + (GRID_W + 1), d = c + 1;
+      indices[ii++] = a; indices[ii++] = c; indices[ii++] = b;
+      indices[ii++] = b; indices[ii++] = c; indices[ii++] = d;
+    }
+  }
+  const disp = new Float32Array(vertCount * 2);
+  const vel = new Float32Array(vertCount * 2);
+
+  const vao = gl.createVertexArray();
+  gl.bindVertexArray(vao);
+
+  const posBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, posBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(aPos);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+  const uvBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, uvBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, uvs, gl.STATIC_DRAW);
+  gl.enableVertexAttribArray(aUv);
+  gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, 0, 0);
+
+  const dispBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, dispBuf);
+  gl.bufferData(gl.ARRAY_BUFFER, disp, gl.DYNAMIC_DRAW);
+  gl.enableVertexAttribArray(aDisp);
+  gl.vertexAttribPointer(aDisp, 2, gl.FLOAT, false, 0, 0);
+
+  const idxBuf = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuf);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
+
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+  // Vykreslí aktuální 3 řádky nadpisu (fill / outline dle CSS) do offscreen
+  // canvasu podle skutečných rozměrů span prvků — respektuje responzivní
+  // velikost fontu i zarovnání beze změny typografie.
+  function renderHeadlineTexture(w, h, dpr) {
+    const c2 = document.createElement('canvas');
+    c2.width = w; c2.height = h;
+    const ctx = c2.getContext('2d');
+    ctx.clearRect(0, 0, w, h);
+    const h1Rect = h1.getBoundingClientRect();
+    h1.querySelectorAll(':scope > span').forEach((span) => {
+      const rect = span.getBoundingClientRect();
+      const cs = getComputedStyle(span);
+      const fontSize = parseFloat(cs.fontSize) * dpr;
+      const x = (rect.left - h1Rect.left) * dpr;
+      const yMid = (rect.top - h1Rect.top + rect.height / 2) * dpr;
+      const text = span.textContent.toUpperCase();
+      ctx.font = `${cs.fontWeight} ${fontSize}px ${cs.fontFamily}`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      try { ctx.letterSpacing = '-0.032em'; } catch (e) {}
+      if (span.classList.contains('out')) {
+        ctx.lineWidth = 2 * dpr;
+        ctx.strokeStyle = INK;
+        ctx.strokeText(text, x, yMid);
+      } else {
+        ctx.fillStyle = INK;
+        ctx.fillText(text, x, yMid);
+      }
+    });
+    return c2;
+  }
+
+  function rebuildTex() {
+    const dpr = window.devicePixelRatio || 1;
+    const c2 = renderHeadlineTexture(Math.max(2, canvas.width), Math.max(2, canvas.height), dpr);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c2);
+  }
+
+  function resize() {
+    const dpr = window.devicePixelRatio || 1;
+    const rect = h1.getBoundingClientRect();
+    const w = Math.max(2, Math.round(rect.width * dpr));
+    const h = Math.max(2, Math.round(rect.height * dpr));
+    canvas.width = w;
+    canvas.height = h;
+    gl.viewport(0, 0, w, h);
+    rebuildTex();
+  }
+
+  const cursor = { x: 99, y: 99, px: 99, py: 99, vx: 0, vy: 0 };
+  const onMove = (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const nx = (e.clientX - rect.left) / rect.width;
+    const ny = (e.clientY - rect.top) / rect.height;
+    cursor.x = nx * 2 - 1;
+    cursor.y = 1 - ny * 2;
+  };
+  const onLeave = () => { cursor.x = 99; cursor.y = 99; };
+  canvas.addEventListener('pointermove', onMove);
+  canvas.addEventListener('pointerleave', onLeave);
+
+  function tick() {
+    cursor.vx = cursor.x - cursor.px;
+    cursor.vy = cursor.y - cursor.py;
+    if (Math.hypot(cursor.vx, cursor.vy) > 0.3) { cursor.vx = 0; cursor.vy = 0; }
+    cursor.px = cursor.x;
+    cursor.py = cursor.y;
+
+    for (let i = 0; i < vertCount; i++) {
+      const i2 = i * 2;
+      const px = positions[i2], py = positions[i2 + 1];
+      const dx = disp[i2], dy = disp[i2 + 1];
+      const cx = cursor.x - (px + dx), cy = cursor.y - (py + dy);
+      const cd = Math.hypot(cx, cy);
+      const proximity = Math.max(0, 1 / (1 + cd / 0.05) - 0.1);
+
+      let vx = vel[i2], vy = vel[i2 + 1];
+      vx += cursor.vx * DRAG * proximity;
+      vy += cursor.vy * DRAG * proximity;
+      vx -= dx * SPRING_K;
+      vy -= dy * SPRING_K;
+      vx *= DAMPING;
+      vy *= DAMPING;
+      vel[i2] = vx; vel[i2 + 1] = vy;
+
+      let ndx = dx + vx * DT, ndy = dy + vy * DT;
+      if (ndx > 1) ndx = 1; else if (ndx < -1) ndx = -1;
+      if (ndy > 1) ndy = 1; else if (ndy < -1) ndy = -1;
+      disp[i2] = ndx; disp[i2 + 1] = ndy;
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, dispBuf);
+    gl.bufferSubData(gl.ARRAY_BUFFER, 0, disp);
+
+    gl.clearColor(0, 0, 0, 0);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(program);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, tex);
+    gl.uniform1i(uTex, 0);
+    gl.uniform1f(uChroma, 1.0);
+    gl.uniform3f(uColorA, COLOR_A[0], COLOR_A[1], COLOR_A[2]);
+    gl.uniform3f(uColorB, COLOR_B[0], COLOR_B[1], COLOR_B[2]);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+    gl.bindVertexArray(vao);
+    gl.drawElements(gl.TRIANGLES, indexCount, gl.UNSIGNED_INT, 0);
+
+    requestAnimationFrame(tick);
+  }
+
+  const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+  fontsReady.then(() => {
+    resize();
+    h1.classList.add('mesh-ready');
+    requestAnimationFrame(tick);
+  });
+
+  let resizeRaf = 0;
+  new ResizeObserver(() => {
+    cancelAnimationFrame(resizeRaf);
+    resizeRaf = requestAnimationFrame(resize);
+  }).observe(h1);
+})();
 </script>
 </body>
 </html>
