@@ -10,7 +10,8 @@ nasazený přes GitHub Pages na doméně `klarkanis.cz` (soubor `CNAME`).
 | `index.html` | jediná veřejná stránka, obsah, metadata a strukturovaná data (JSON-LD) |
 | `404.html` | vlastní chybová stránka (GitHub Pages ji vrací se stavem 404) |
 | `styles.css` | design system: tokeny, typografie, layout, komponenty |
-| `main.js` | navigace, odhalení při scrollu, kontaktní formulář, efekt na nadpisu |
+| `main.js` | navigace, odhalení při scrollu, kontaktní formulář |
+| `hero-effects.js` | WebGL efekty v hero: driftující síť uzlů na pozadí a deformace nadpisu pod kurzorem |
 | `fonts/` | Newsreader a IBM Plex Sans (SIL OFL), podmnožiny latin a latin-ext |
 | `img/` | OG obrázek a ikony |
 | `robots.txt`, `sitemap.xml`, `site.webmanifest`, `favicon.*` | technické SEO a ikony |
