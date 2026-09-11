@@ -38,6 +38,18 @@ node tools/render-assets.mjs
 Skript vyrenderuje `tools/og.html` do `img/og.png` (1200×630) a z `favicon.svg`
 vytvoří PNG ikony a `favicon.ico`.
 
+## IndexNow
+
+Soubor `c67a902aedcda3e9514c431b474252bb.txt` v kořeni je ověřovací klíč protokolu IndexNow (Bing, Seznam, Yandex).
+Po změně obsahu lze změnu ohlásit jedním požadavkem:
+
+```
+curl -X POST https://api.indexnow.org/indexnow -H "Content-Type: application/json; charset=utf-8" \
+  -d '{"host":"klarkanis.cz","key":"c67a902aedcda3e9514c431b474252bb","keyLocation":"https://klarkanis.cz/c67a902aedcda3e9514c431b474252bb.txt","urlList":["https://klarkanis.cz/"]}'
+```
+
+Google IndexNow nepoužívá, tam se o indexaci žádá v Google Search Console.
+
 ## Lokální náhled
 
 Jakýkoli statický server v kořeni repozitáře, například `npx serve .`.
