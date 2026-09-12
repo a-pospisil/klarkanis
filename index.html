@@ -588,20 +588,35 @@
       <ol class="psteps">
         <li class="pstep" data-step="1">
           <p class="pstep-n mono">01</p>
-          <h3>Poznám provoz</h3>
+          <h3>Seznámím se s&nbsp;provozem</h3>
           <p>Mluvím s&nbsp;lidmi, kteří práci opravdu dělají. Sleduji, kde vznikají výjimky a&nbsp;ruční kroky, a&nbsp;měřím, kolik času stojí.</p>
           <p class="pstep-out"><span class="mono">Výstup</span>Mapa procesu a&nbsp;seznam bolestí seřazený podle dopadu</p>
         </li>
         <li class="pstep" data-step="2">
           <p class="pstep-n mono">02</p>
           <h3>Navrhnu řešení</h3>
-          <p>Dostanete varianty s&nbsp;odhadem náročnosti a&nbsp;přínosu, včetně varianty nestavět nic. Vybíráme společně, na základě čísel.</p>
+          <p>Z&nbsp;mapy provozu vznikne několik variant s&nbsp;odhadem náročnosti a&nbsp;přínosu, včetně varianty nestavět nic. Vybíráme společně, na základě čísel, ne pocitů.</p>
+          <ul class="pstep-list">
+            <li><b>Varianta A</b> — upravit proces, bez nového softwaru</li>
+            <li><b>Varianta B</b> — nový nebo upravený systém na míru</li>
+            <li><b>Varianta C</b> — nestavět nic, jen pojmenovat riziko</li>
+          </ul>
           <p class="pstep-out"><span class="mono">Výstup</span>Zadání, podle kterého se dá skutečně stavět</p>
+          <ul class="pstep-out-tags mono">
+            <li>rozsah</li>
+            <li>náročnost</li>
+            <li>přínos</li>
+            <li>doporučení</li>
+          </ul>
         </li>
         <li class="pstep" data-step="3">
           <p class="pstep-n mono">03</p>
           <h3>Postavím a&nbsp;nasadím</h3>
-          <p>Stavím po částech, aby první užitek přišel do několika týdnů. Nasazení včetně migrace dat, zaškolení a&nbsp;dokumentace.</p>
+          <p>Stavím po částech, aby první užitek přišel do několika týdnů. Implementaci volím podle úlohy, ne podle toho, co umím nejradši. Nasazení včetně migrace dat, zaškolení a&nbsp;dokumentace.</p>
+          <ul class="pstep-list">
+            <li><b>Web a&nbsp;rozhraní</b> — JavaScript/TypeScript, React, databáze</li>
+            <li><b>Data a&nbsp;automatizace</b> — Python, SQL</li>
+          </ul>
           <p class="pstep-out"><span class="mono">Výstup</span>Systém, který tým používá, a&nbsp;dokumentace, ve které se vyzná i&nbsp;nástupce</p>
         </li>
         <li class="pstep" data-step="4">
@@ -670,7 +685,7 @@
   <div class="wrap">
     <header class="sec-head">
       <p class="sec-idx mono">§ 06</p>
-      <h2 class="sec-title" id="otazky-title">Co padá na první schůzce</h2>
+      <h2 class="sec-title" id="otazky-title">Otázky, co padají na první schůzce</h2>
       <p class="sec-meta mono">6 otázek</p>
     </header>
     <ul class="qa-list" data-reveal>
@@ -800,5 +815,15 @@
     </div>
   </div>
 </footer>
+
+<div class="cookie-jar" id="cookie-jar" role="note" aria-label="Poznámka o cookies" hidden>
+  <p class="cookie-jar-icon" aria-hidden="true">🍪</p>
+  <div class="cookie-jar-body">
+    <p class="cookie-jar-title mono">Cookies? Ani drobek.</p>
+    <p>Tenhle web nic neukládá, nikoho nesleduje a&nbsp;neposílá vaše data nikam za roh. Kdybychom cookies přece jen měli, klikali byste teď na tlačítko „Souhlasím“ a&nbsp;stejně by vám nezbylo nic jiného. Takhle si aspoň dejte tu opravdovou.</p>
+  </div>
+  <button class="cookie-jar-close" type="button" data-cookie-dismiss>Dobrou chuť</button>
+</div>
+
 </body>
 </html>

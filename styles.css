@@ -122,7 +122,8 @@ main{position:relative;z-index:1}
 .link-arrow:hover .icon-down{transform:rotate(90deg) translateX(3px)}
 .brand{display:inline-flex;align-items:center;gap:.7rem;color:var(--ink);font:500 var(--fs-1)/1 var(--font-sans);text-decoration:none;white-space:nowrap}
 .brand .mark{width:1.875rem;height:1.875rem;flex:none;color:var(--ink-2);transition:transform .4s var(--ease)}
-.brand:hover .mark{transform:rotate(-8deg)}
+.brand:hover .mark{animation:brand-spin 1.6s linear infinite}
+@keyframes brand-spin{to{transform:rotate(360deg)}}
 
 /* Bloková progress hodnota: 10 dílků, výplň řízená --v (0–1) */
 .bar{--cell:.4rem;--gap:.15rem;position:relative;display:inline-block;width:calc(10 * (var(--cell) + var(--gap)) - var(--gap));height:.55rem;background:repeating-linear-gradient(90deg,var(--bar-bg,var(--line-2)) 0 var(--cell),transparent var(--cell) calc(var(--cell) + var(--gap)));vertical-align:middle}
@@ -551,8 +552,14 @@ html:not(.js) .scene-links,html:not(.js) .sys-frame,html:not(.js) .rl,html:not(.
 .pstep-n{padding-top:.45em;color:var(--moss);letter-spacing:.06em}
 .pstep h3{grid-column:2}
 .pstep>p:not(.pstep-n){grid-column:2;color:var(--text-2);max-width:46ch}
-.pstep-out{display:grid;gap:.25rem;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--line);font-size:var(--fs-1);color:var(--text)!important}
+.pstep-list{grid-column:2;display:grid;gap:.4rem;margin:.9rem 0 0;padding:0;list-style:none;max-width:46ch;color:var(--text-2)}
+.pstep-list li{padding-left:1rem;position:relative}
+.pstep-list li::before{content:"";position:absolute;left:0;top:.55em;width:.4rem;height:1px;background:var(--line-2)}
+.pstep-list b{color:var(--ink);font-weight:500}
+.pstep-out{grid-column:2;display:grid;gap:.25rem;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--line);font-size:var(--fs-1);color:var(--text)!important}
 .pstep-out .mono{color:var(--text-3);text-transform:uppercase;letter-spacing:.1em}
+.pstep-out-tags{grid-column:2;display:flex;flex-wrap:wrap;gap:.4rem .5rem;margin:.6rem 0 0;padding:0;list-style:none}
+.pstep-out-tags li{padding:.2rem .55rem;border:1px solid var(--line-2);border-radius:var(--radius);color:var(--text-2);text-transform:uppercase;letter-spacing:.08em;font-size:.6875rem}
 @media (min-width:900px){.pstep{min-height:62vh;padding:2.5rem 0;align-content:start}.pstep:first-child{padding-top:.5rem;border-top:0}}
 
 /* 12 O mně: výrazná typografie, žádná fotografie */
@@ -636,7 +643,8 @@ html:not(.js) .scene-links,html:not(.js) .sys-frame,html:not(.js) .rl,html:not(.
 .cta .sec-idx{color:var(--on-dark-2)}
 .cta-title{margin:0;font-size:clamp(2.5rem,1rem + 6.4vw,6.75rem);line-height:.95;letter-spacing:-.02em;text-transform:uppercase}
 .cta-title .tl{padding:.08em 0 .12em;margin:-.08em 0 -.12em}
-.cta-btn{position:relative;justify-self:start;display:inline-flex;align-items:center;gap:.8rem;padding:1.05rem 1.3rem;border:1px solid var(--line-2);border-radius:var(--radius);color:var(--on-dark);font:500 .875rem/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;overflow:hidden;transition:color .35s var(--ease),border-color .35s var(--ease),transform .5s var(--ease)}
+.cta-btn{position:relative;justify-self:start;display:inline-flex;align-items:center;gap:.8rem;padding:1.05rem 1.3rem;border:1px solid var(--line-2);border-radius:var(--radius);color:var(--on-dark);font:500 .875rem/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;overflow:hidden;transition:color .35s var(--ease),border-color .35s var(--ease),transform .6s var(--ease-io)}
+.cta-btn.is-tracking{transition:color .35s var(--ease),border-color .35s var(--ease),transform .1s linear}
 .cta-btn::before{content:"";position:absolute;inset:0;z-index:0;background:var(--lime);transform:scaleX(0);transform-origin:left;transition:transform .5s var(--ease-io)}
 .cta-btn>*{position:relative;z-index:1}
 .cb-br{color:var(--on-dark-2);transition:transform .5s var(--ease-io),color .35s}
@@ -696,6 +704,18 @@ textarea.input{min-height:9rem;resize:vertical}
   .footer-top{grid-template-columns:minmax(0,5fr) minmax(0,7fr);align-items:start}
   .footer-nav ul{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--s-2) var(--s-6)}
 }
+
+/* 15b Cookie poznámka: vtip o tom, že žádné nejsou */
+.cookie-jar{position:fixed;left:var(--s-4);right:var(--s-4);bottom:var(--s-4);z-index:60;display:grid;grid-template-columns:auto minmax(0,1fr);gap:.25rem var(--s-4);align-items:start;max-width:26rem;margin:0 auto;padding:var(--s-4);border:1px solid var(--line-2);border-radius:var(--radius);background:var(--paper);box-shadow:0 12px 32px -12px rgba(18,22,27,.35);opacity:0;transform:translateY(12px);transition:opacity .5s var(--ease),transform .5s var(--ease)}
+.cookie-jar.is-in{opacity:1;transform:none}
+.cookie-jar[hidden]{display:grid}
+.cookie-jar.is-gone{pointer-events:none}
+.cookie-jar-icon{grid-row:1/span 2;margin:.1rem 0 0;font-size:1.5rem;line-height:1}
+.cookie-jar-title{margin:0 0 .35rem;color:var(--text-3);text-transform:uppercase;letter-spacing:.1em}
+.cookie-jar-body p:not(.cookie-jar-title){margin:0;color:var(--text-2);font-size:.875rem;line-height:1.5}
+.cookie-jar-close{grid-column:2;justify-self:start;margin-top:.75rem;padding:.5rem .9rem;border:1px solid var(--ink);border-radius:var(--radius);background:var(--ink);color:var(--on-dark);font:500 .75rem/1 var(--font-mono);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;transition:background var(--dur) var(--ease)}
+.cookie-jar-close:hover{background:var(--ink-2)}
+@media (max-width:479.98px){.cookie-jar{grid-template-columns:minmax(0,1fr)}.cookie-jar-icon{grid-row:1;margin-bottom:.1rem}.cookie-jar-close{grid-column:1}}
 
 /* 16 Pohyb a přístupnost */
 @keyframes menu-in{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}

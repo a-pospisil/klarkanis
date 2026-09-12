@@ -129,6 +129,22 @@
     });
   }
 
+  /* Vtipná poznámka o cookies (kterých web nemá) */
+  const cookieJar = document.getElementById('cookie-jar');
+  if (cookieJar) {
+    const dismissed = (() => { try { return localStorage.getItem('cookie-jar-seen') === '1'; } catch { return false; } })();
+    if (!dismissed) {
+      cookieJar.hidden = false;
+      setTimeout(() => cookieJar.classList.add('is-in'), reduceMotion ? 0 : 600);
+    }
+    cookieJar.querySelector('[data-cookie-dismiss]').addEventListener('click', () => {
+      cookieJar.classList.remove('is-in');
+      cookieJar.classList.add('is-gone');
+      setTimeout(() => { cookieJar.hidden = true; }, reduceMotion ? 0 : 500);
+      try { localStorage.setItem('cookie-jar-seen', '1'); } catch {}
+    });
+  }
+
   /* Kontaktní formulář: validace polí a odeslání přes Web3Forms */
   const form = document.getElementById('contact-form');
   if (form) {

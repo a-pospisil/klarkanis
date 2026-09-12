@@ -488,13 +488,18 @@
       const reachX = r.width * 0.85;
       const reachY = r.height * 2.2;
       if (Math.abs(dx) < reachX && Math.abs(dy) < reachY) {
-        active = true;
+        if (!active) { active = true; btn.classList.add('is-tracking'); }
         btn.style.transform = `translate3d(${(dx * 0.2).toFixed(1)}px,${(dy * 0.2).toFixed(1)}px,0)`;
       } else if (active) {
         active = false;
+        btn.classList.remove('is-tracking');
         btn.style.transform = '';
       }
     });
-    zone.addEventListener('pointerleave', () => { active = false; btn.style.transform = ''; });
+    zone.addEventListener('pointerleave', () => {
+      active = false;
+      btn.classList.remove('is-tracking');
+      btn.style.transform = '';
+    });
   }
 })();
