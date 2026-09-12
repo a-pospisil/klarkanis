@@ -1,15 +1,28 @@
 /* klarkanis.cz
-   Hlavička, mobilní menu, aktivní sekce, odhalení při scrollu,
-   kontaktní formulář (Web3Forms). Efekty v hero sekci jsou v hero-effects.js. */
+   Hlavička (linka průchodu, poloha v dokumentu), mobilní menu, odhalení
+   bloků při scrollu, scénáře služeb, kontaktní formulář (Web3Forms).
+   Scény řízené scrollem jsou ve scenes.js. */
 (() => {
   'use strict';
 
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* Hlavička: linka po odscrollování */
+  /* Hlavička: linka po odscrollování a 1px ukazatel průchodu stránkou */
   const header = document.querySelector('.site-header');
-  const onScroll = () => header.classList.toggle('is-scrolled', scrollY > 4);
+  const progress = header.querySelector('.scroll-line i');
+  let queued = false;
+  const onScroll = () => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      header.classList.toggle('is-scrolled', scrollY > 4);
+      const max = document.documentElement.scrollHeight - innerHeight;
+      progress.style.setProperty('--sp', max > 0 ? Math.min(1, scrollY / max).toFixed(4) : '0');
+    });
+  };
   addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', onScroll);
   onScroll();
 
   /* Mobilní menu */
@@ -36,33 +49,84 @@
   });
   matchMedia('(min-width: 900px)').addEventListener('change', (e) => { if (e.matches) setMenu(false); });
 
-  /* Zvýraznění sekce, ve které se čtenář nachází */
-  const navLinks = [...nav.querySelectorAll('.nav-link')].filter((a) => document.querySelector(a.hash));
-  if ('IntersectionObserver' in window && navLinks.length) {
-    const byId = new Map(navLinks.map((a) => [a.hash.slice(1), a]));
+  /* Poloha v dokumentu: index sekce v hlavičce a zvýraznění odkazu v navigaci */
+  const sections = [...document.querySelectorAll('main [data-title]')];
+  const posN = document.querySelector('.nav-pos-n');
+  const posT = document.querySelector('.nav-pos-t');
+  const posTotal = document.querySelector('.nav-pos-total');
+  const navLinks = [...nav.querySelectorAll('.nav-link')];
+  if (posTotal) posTotal.textContent = String(sections.length - 1).padStart(2, '0');
+  if ('IntersectionObserver' in window && sections.length) {
     const spy = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
-        navLinks.forEach((a) => a.removeAttribute('aria-current'));
-        byId.get(entry.target.id).setAttribute('aria-current', 'true');
+        const i = sections.indexOf(entry.target);
+        if (posN) posN.textContent = String(i).padStart(2, '0');
+        if (posT) posT.textContent = entry.target.dataset.title;
+        navLinks.forEach((a) => {
+          if (a.hash === '#' + entry.target.id) a.setAttribute('aria-current', 'true');
+          else a.removeAttribute('aria-current');
+        });
       });
     }, { rootMargin: '-35% 0px -60% 0px' });
-    byId.forEach((a, id) => spy.observe(document.getElementById(id)));
+    sections.forEach((s) => spy.observe(s));
   }
 
-  /* Odhalení bloků při scrollu */
-  const revealEls = document.querySelectorAll('[data-reveal]');
+  /* Hlavička ztmavne nad tmavými sekcemi (kontakt, patička); scénu „Z chaosu systém“ hlídá scenes.js */
+  const darkEls = document.querySelectorAll('[data-dark]');
+  if ('IntersectionObserver' in window && darkEls.length) {
+    const under = new Set();
+    const shade = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => { if (entry.isIntersecting) under.add(entry.target); else under.delete(entry.target); });
+      document.documentElement.classList.toggle('hdr-dark-contact', under.size > 0);
+    }, { rootMargin: '0px 0px -96% 0px' });
+    darkEls.forEach((el) => shade.observe(el));
+  }
+
+  /* Nadpis hero: odhalení řádků, jakmile jsou písma připravená */
+  const heroTitle = document.getElementById('hero-title');
+  const revealTitle = () => heroTitle && heroTitle.classList.add('is-in');
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(revealTitle);
+  setTimeout(revealTitle, 900);
+
+  /* Odhalení bloků při scrollu; scénář služby se spustí s odhalením */
+  const revealEls = document.querySelectorAll('[data-reveal],[data-align]');
+  const show = (el) => {
+    el.classList.add('is-in');
+    const flow = el.querySelector('.flow');
+    if (flow) flow.classList.add('is-run');
+  };
   if (!reduceMotion && 'IntersectionObserver' in window) {
     const io = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
         if (!entry.isIntersecting) return;
-        entry.target.classList.add('is-in');
+        show(entry.target);
         io.unobserve(entry.target);
       });
-    }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+    }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
     revealEls.forEach((el) => io.observe(el));
   } else {
-    revealEls.forEach((el) => el.classList.add('is-in'));
+    revealEls.forEach(show);
+  }
+
+  /* Číslo služby: najetím se scénář vstup → proces → výstup přehraje znovu */
+  document.querySelectorAll('.svc-n').forEach((n) => {
+    n.addEventListener('mouseenter', () => {
+      const flow = n.parentElement.querySelector('.flow');
+      if (!flow || reduceMotion || !flow.classList.contains('is-run')) return;
+      flow.classList.remove('is-run');
+      void flow.offsetWidth;
+      flow.classList.add('is-run');
+    });
+  });
+
+  /* Výzva v kontaktu vede na formulář a zaměří první pole */
+  const cta = document.querySelector('.cta-btn');
+  if (cta) {
+    cta.addEventListener('click', () => {
+      const first = document.getElementById('f-name');
+      if (first) setTimeout(() => first.focus({ preventScroll: true }), reduceMotion ? 0 : 650);
+    });
   }
 
   /* Kontaktní formulář: validace polí a odeslání přes Web3Forms */
