@@ -3,6 +3,19 @@
 Osobní web Kláry Pospíšilové, business analytičky. Statický web bez build kroku,
 nasazený přes GitHub Pages na doméně `klarkanis.cz` (soubor `CNAME`).
 
+## Hosting a indexace
+
+Produkce je GitHub Pages (DNS domény míří na GitHub, větev `main`). Přesměrování
+`http://` → `https://`, `www.klarkanis.cz` → `klarkanis.cz` a `a-pospisil.github.io/klarkanis`
+→ `klarkanis.cz` dělá GitHub Pages samo (301, bez řetězení). Search Console je proto u těchto
+variant hlásí jako „Stránka s přesměrováním“; to je správný stav, indexuje se jen
+kanonická `https://klarkanis.cz/` (viz `rel="canonical"` v `index.html` a `sitemap.xml`).
+
+Repozitář je napojený i na Vercel. Tato kopie není produkce: `vercel.json` ji přesměrovává
+na `klarkanis.cz`, aby Google neviděl duplicitní web. Skript Vercel Web Analytics v `index.html`
+a `404.html` na GitHub Pages nic neměří (`/_vercel/insights/script.js` tam vrací 404); měřit začne
+jen v případě, že se produkce přesune na Vercel.
+
 ## Vizuální systém
 
 Web nepoužívá fotografie. Hlavním vizuálním prvkem je samotný systém: myšlenka
@@ -29,6 +42,7 @@ Web nepoužívá fotografie. Hlavním vizuálním prvkem je samotný systém: my
 | `fonts/` | Newsreader, IBM Plex Sans a IBM Plex Mono (SIL OFL), podmnožiny latin a latin-ext |
 | `img/` | OG obrázek a ikony |
 | `robots.txt`, `sitemap.xml`, `site.webmanifest`, `favicon.*` | technické SEO a ikony |
+| `vercel.json` | kopie webu na Vercelu (`klarkanis.vercel.app`) přesměrovává na `klarkanis.cz`; ostatní hosty dostávají `noindex` |
 | `tools/` | šablona OG obrázku a skript, který generuje `img/*` a `favicon.ico` |
 
 ## Úpravy obsahu
