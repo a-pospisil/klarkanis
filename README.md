@@ -12,9 +12,8 @@ variant hlásí jako „Stránka s přesměrováním“; to je správný stav, i
 kanonická `https://klarkanis.cz/` (viz `rel="canonical"` v `index.html` a `sitemap.xml`).
 
 Repozitář je napojený i na Vercel. Tato kopie není produkce: `vercel.json` ji přesměrovává
-na `klarkanis.cz`, aby Google neviděl duplicitní web. Skript Vercel Web Analytics v `index.html`
-a `404.html` na GitHub Pages nic neměří (`/_vercel/insights/script.js` tam vrací 404); měřit začne
-jen v případě, že se produkce přesune na Vercel.
+na `klarkanis.cz`, aby Google neviděl duplicitní web. Web neobsahuje žádné měření návštěvnosti
+(skript Vercel Web Analytics byl odstraněn, na GitHub Pages nefungoval).
 
 ## Vizuální systém
 
